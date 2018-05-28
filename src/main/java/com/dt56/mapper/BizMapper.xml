@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dt56.mapper.BizMapper">
+<cache type="com.dt56.util.RedisCache"/>
+	<!-- 用户登录验证 -->
+	<select id="validata" parameterType="com.dt56.pojo.UserInfo" resultType="com.dt56.pojo.UserInfo">
+		select * from stu where sid=#{sid} and sname=#{sname}
+	</select>
+	<select id="queryall" resultType="com.dt56.pojo.UserInfo">
+		select * from stu 
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	 <select id="validataUser" parameterType="user" resultType="user">
+ select * from  smbms_user where usercode=#{userCode} and userpassword=#{userPassword}
+ </select>
+ <select id="getAllBill"  resultType="bill">
+ select * from  smbms_bill 
+ </select>
+ <resultMap id="rmap" type="bill">
+  <id property="id" column="id" />
+  <result property="billCode" column="billCode"/>
+  <result property="productName" column="productName"/>
+  <result property="totalPrice" column="totalPrice"/>
+  <result property="isPayment" column="isPayment"/>
+  <association property="providerId" javaType="smbmsprovider">
+    <id property="id" column="id"/>
+    <result property="proName" column="proName"/>    
+  </association>
+</resultMap>
+ <select id="getAllBill2"  resultMap="rmap">
+SELECT a.billCode,a.productName,a.totalPrice,a.isPayment,b.proName 
+FROM smbms_bill a LEFT JOIN smbms_provider b 
+ON a.providerId=b.id LIMIT #{start},#{end}
+ </select>
+ <select id="selectBillByName"  parameterType="string" resultMap="rmap">
+SELECT a.billCode,a.productName,a.totalPrice,a.isPayment,b.proName 
+FROM smbms_bill a LEFT JOIN smbms_provider b 
+ON a.providerId=b.id
+<where>
+<if test="name!=''">
+a.productName LIKE '%'||#{name}||'%'
+</if>
+<if test="pro!='请选择'">
+and b.proName=#{pro}
+</if>
+<if test="pay!=0">
+and a.isPayment=#{pay}
+</if>
+</where>
+
+ </select>
+  <select id="getAllProvider"  resultType="smbmsprovider">
+SELECT DISTINCT proName FROM smbms_provider
+ </select>
+	<resultMap id="usermap" type="user">
+		<id property="id" column="id"></id>
+		<result property="userCode" column="userCode"></result>
+		<result property="userName" column="userName"></result>
+		<result property="gender" column="gender"></result>
+		<result property="age" column="age"></result>
+		<result property="phone" column="phone"></result>
+		 <association property="role" javaType="smbmsrole">
+		 	<id property="id" column="id"/>
+		 	<result property="roleName" column="roleName"/>
+		</association>
+	</resultMap>
+	<select id="getAllUser" resultMap="usermap">
+		SELECT a.`id`,a.`userCode`,a.`userName`,a.`gender`,
+		ROUND(DATEDIFF(NOW(),a.`birthday`)/365,0) AS age,a.`phone`,b.`roleName` FROM smbms_user a
+		INNER JOIN smbms_role b ON a.`userRole`=b.`id`	
+	</select>
+	<insert id="addUser" parameterType="user">
+	INSERT INTO smbms_user(usercode,username,userPassword,gender,birthday,phone,address,userrole) 
+		VALUES(#{userCode},#{userName},#{userPassword},#{gender},#{birthday},#{phone},#{address},#{userRole})
+	</insert>
+	<update id="updateUser" parameterType="user">
+	UPDATE smbms_user SET userName=#{userName},userPassword=#{userPassword} WHERE id=#{id}
+	</update>
+    <delete id="delUserById" parameterType="string">
+    delete from  smbms_user where id=#{id}
+    </delete>
+    <resultMap type="SmbmsRole" id="rolemap">
+    <id property="id" column="id"></id>
+    <result property="roleName" column="roleName"></result>
+    <collection property="sprovider" javaType="smbmsprovider">
+    <id property="id" column="id"></id>
+    <result property="proCode" column="proCode"></result>
+    <result property="proName" column="proName"></result>
+    <result property="proContact" column="roleNproContactame"></result>
+    <result property="proPhone" column="proPhone"></result>
+    <result property="proFax" column="proFax"></result>
+    <result property="creationDate" column="creationDate"></result>
+    </collection>
+    </resultMap>
+    <select id="getAllProviderInfo" resultMap="rolemap">
+    SELECT a.roleName,b.`id`,b.`proCode`,b.`proName`,b.`proContact`,b.`proPhone`,b.`proFax`,
+		b.`creationDate` FROM smbms_role a INNER JOIN smbms_provider b ON a.id=b.createdBy</select>
+    <select id="getBillCount" resultType="int">
+   SELECT 
+		  COUNT(*)
+		FROM
+		  smbms_bill a 
+		  INNER JOIN smbms_provider b 
+		    ON a.`providerId` = b.`id`
+    </select>
+</mapper>
